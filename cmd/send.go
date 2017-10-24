@@ -15,9 +15,14 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
-
+	"github.com/google/go-github/github"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
+	"log"
+	//"net/url"
+	"os"
 )
 
 // sendCmd represents the send command
@@ -32,7 +37,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("send called")
-		send(args[0])
+		send()
 	},
 }
 
@@ -50,11 +55,11 @@ func init() {
 	// sendCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func send(user string) {
-	baseURL, err := url.Parse(os.Getenv("GITHUB_API"))
+func send() {
+	/* baseURL, err := url.Parse(os.Getenv("GITHUB_API"))
 	if err != nil {
 		panic(err)
-	}
+	} */
 
 	token := os.Getenv("GITHUB_TOKEN")
 	if token == "" {
@@ -68,5 +73,36 @@ func send(user string) {
 	tc := oauth2.NewClient(ctx, ts)
 
 	client := github.NewClient(tc)
-	client.BaseURL = baseURL
+	//client.BaseURL = baseURL
+
+	keyOpts := &github.ListOptions{}
+
+	keys, _, err := client.Users.ListKeys(ctx, "mlbright", keyOpts)
+	if err != nil {
+		log.Fatalf("Error listing keys: %v", err)
+	}
+
+	var wormholeKey github.Key
+	for _, k := range keys {
+		//log.Println(i)
+		key, _, _ := client.Users.GetKey(ctx, k.GetID())
+		// log.Printf("%v", key)
+		//log.Println(key.GetTitle())
+		if key.GetTitle() == "wormhole" {
+			wormholeKey = *key
+		}
+	}
+
+	//log.Println(wormholeKey.GetTitle())
+	/*
+		  // TODO: temp
+			secret := "abcdef"
+
+			var out []byte
+			out, err = rsa.EncryptOAEP(sha1.New(), rand.Reader, &priv.PublicKey, secret, []byte("test secret"))
+			if err != nil {
+			    log.Fatalf("encrypt: %s", err)
+			}
+	*/
+
 }

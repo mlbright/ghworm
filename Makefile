@@ -15,7 +15,7 @@ RELEASEDIR=release
 ORG=brightm
 REPO=$(BINARY)
 
-default: test build
+default: test build fmt
 
 build:
 	$(GOFMT) *.go
@@ -23,6 +23,7 @@ build:
 
 fmt:
 	$(GOFMT) *.go
+	$(GOFMT) cmd/*.go
 
 test:
 	$(GOTEST) -v ./...
