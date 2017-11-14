@@ -16,12 +16,16 @@ package cmd
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha1"
+	b64 "encoding/base64"
 	"fmt"
 	"github.com/google/go-github/github"
+	helper "github.com/ianmcmahon/encoding_ssh"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"log"
-	//"net/url"
 	"os"
 )
 
@@ -73,7 +77,6 @@ func send() {
 	tc := oauth2.NewClient(ctx, ts)
 
 	client := github.NewClient(tc)
-	//client.BaseURL = baseURL
 
 	keyOpts := &github.ListOptions{}
 
@@ -84,25 +87,41 @@ func send() {
 
 	var wormholeKey github.Key
 	for _, k := range keys {
-		//log.Println(i)
 		key, _, _ := client.Users.GetKey(ctx, k.GetID())
-		// log.Printf("%v", key)
-		//log.Println(key.GetTitle())
 		if key.GetTitle() == "wormhole" {
 			wormholeKey = *key
 		}
 	}
 
-	//log.Println(wormholeKey.GetTitle())
-	/*
-		  // TODO: temp
-			secret := "abcdef"
+	log.Println(wormholeKey.GetTitle())
 
-			var out []byte
-			out, err = rsa.EncryptOAEP(sha1.New(), rand.Reader, &priv.PublicKey, secret, []byte("test secret"))
-			if err != nil {
-			    log.Fatalf("encrypt: %s", err)
-			}
-	*/
+	secret := "abcdef"
+
+	something, err := helper.DecodePublicKey(wormholeKey.GetKey())
+	if err != nil {
+		log.Fatalf("Could decode public key: %v", err)
+	}
+	publicKey := something.(*rsa.PublicKey)
+
+	var out []byte
+	out, err = rsa.EncryptOAEP(sha1.New(), rand.Reader, publicKey, []byte(secret), []byte("test secret"))
+	if err != nil {
+		log.Fatalf("encrypting error: %s", err)
+	}
+	sEnc := b64.StdEncoding.EncodeToString(out)
+
+	file := github.GistFile{}
+	file.Content = &sEnc
+
+	files := make(map[github.GistFilename]github.GistFile)
+	files["something"] = file
+
+	g := &github.Gist{}
+	g.Files = files
+	gist, _, err := client.Gists.Create(ctx, g)
+	if err != nil {
+		log.Fatalf("Error creating gist: %v", err)
+	}
+	fmt.Println(gist.GetHTMLURL())
 
 }

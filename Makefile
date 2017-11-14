@@ -37,10 +37,11 @@ run:
 	$(GOBUILD) -o $(BINARY) -v ./...
 
 deps:
-	$(GOGET) github.com/google/go-github/github
-	$(GOGET) golang.org/x/oauth2
+	$(GOGET) -u github.com/google/go-github/github
+	$(GOGET) -u golang.org/x/oauth2
 	$(GOGET) -u github.com/tcnksm/ghr
 	$(GOGET) -u github.com/spf13/cobra/cobra
+	$(GOGET) -u github.com/ianmcmahon/encoding_ssh
 
 cross:
 	mkdir -p $(RELEASEDIR)/lnx $(RELEASEDIR)/osx $(RELEASEDIR)/win
